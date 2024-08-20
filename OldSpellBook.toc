@@ -2,7 +2,7 @@
 ## Title: Old SpellBook
 ## Notes: Reverts the SpellBook UI to its old version.
 ## Author: Loadren
-## Version: 1.0.0
+## Version: 0.5.1
 ## DefaultState: Enabled
 ## SavedVariables: OldSpellBookSaved
 ## X-Curse-Project-ID: 1087335
