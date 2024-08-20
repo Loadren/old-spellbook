@@ -1,0 +1,15 @@
+package-as: OldSpellBook
+ignore:
+  - .git
+  - .github
+  - .gitignore
+  - README.md
+  - .pkgmeta
+  - .DS_Store
+  - .vscode
+  - node_modules
+  - *.bat
+  - *.sh
+  - logo.jpg
+  - LICENSE
+  - CHANGELOG.md

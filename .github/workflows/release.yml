@@ -1,0 +1,21 @@
+name: Build and Deploy Addon
+
+on:
+  push:
+    tags:
+      - '**'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Package and release
+      uses: BigWigsMods/packager@v2

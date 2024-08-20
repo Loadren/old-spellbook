@@ -1,0 +1,5 @@
+<Bindings>
+    <Binding name='OLD_SPELLBOOK_SHOW_SPELLBOOK' category='Old Spellbook' default="MAJ-P">
+        OldSpellBook:ToggleOldSpellBook()
+    </Binding>
+</Bindings>

@@ -1,0 +1,698 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<Script file="OldSpellBookFrame.lua" />
+	<Frame name="OldSpellBookShineTemplate" inherits="AutoCastShineTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="30" y="30" />
+		</Size>
+	</Frame>
+	<CheckButton name="OldSpellBookSkillLineTabTemplate" virtual="true" hidden="true">
+		<Size>
+			<AbsDimension x="32" y="32" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture file="Interface\SpellBook\SpellBook-SkillLineTab">
+					<Size>
+						<AbsDimension x="64" y="64" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="-3" y="11" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick>
+				OldSpellBookSkillLineTab_OnClick(self);
+			</OnClick>
+			<OnEnter>
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+				GameTooltip:SetText(self.tooltip);
+			</OnEnter>
+			<OnLeave>
+				GameTooltip:Hide();
+			</OnLeave>
+		</Scripts>
+		<NormalTexture />
+		<HighlightTexture file="Interface\Buttons\ButtonHilight-Square" alphaMode="ADD" />
+		<CheckedTexture file="Interface\Buttons\CheckButtonHilight" alphaMode="ADD" />
+	</CheckButton>
+	<Button name="OldSpellBookFrameTabButtonTemplate" virtual="true" hidden="true">
+		<Size>
+			<AbsDimension x="128" y="64" />
+		</Size>
+		<HitRectInsets>
+			<AbsInset left="15" right="14" top="13" bottom="15" />
+		</HitRectInsets>
+		<Scripts>
+			<OnClick>
+				OldSpellBookFrameTabButton_OnClick(self, button, down);
+			</OnClick>
+			<OnEnter>
+				GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+				GameTooltip:SetText(MicroButtonTooltipText(self:GetText(), self.binding),
+				1.0,1.0,1.0 );
+			</OnEnter>
+			<OnLeave>
+				GameTooltip:Hide();
+			</OnLeave>
+		</Scripts>
+		<ButtonText>
+			<Anchors>
+				<Anchor point="CENTER">
+					<Offset>
+						<AbsDimension x="0" y="3" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</ButtonText>
+		<NormalFont style="GameFontNormalSmall" />
+		<HighlightFont style="GameFontHighlightSmall" />
+		<DisabledFont style="GameFontHighlightSmall" />
+		<NormalTexture file="Interface\SpellBook\UI-SpellBook-Tab-Unselected" />
+		<HighlightTexture file="Interface\SpellBook\UI-SpellbookPanel-Tab-Highlight" alphaMode="ADD" />
+	</Button>
+	<Button name="OldSpellButtonTemplate" inherits="SecureActionButtonTemplate" virtual="true">
+		<Size>
+			<AbsDimension x="37" y="37" />
+		</Size>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentBackground"
+					file="Interface/HUD/UiActionBar2x/UI-HUD-ActionBar-IconFrame">
+					<Size>
+						<AbsDimension x="64" y="64" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="-3" y="3" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="BORDER">
+				<Texture name="$parentIconTexture" setAllPoints="true" hidden="true" />
+				<FontString name="$parentSpellName" inherits="GameFontNormal" maxLines="3"
+					hidden="true" justifyH="LEFT">
+					<Size>
+						<AbsDimension x="103" y="0" />
+					</Size>
+					<Anchors>
+						<Anchor point="LEFT" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="4" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentSubSpellName" inherits="SubSpellFont" hidden="true"
+					justifyH="LEFT">
+					<Size>
+						<AbsDimension x="79" y="18" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentSpellName"
+							relativePoint="BOTTOMLEFT">
+							<Offset>
+								<AbsDimension x="0" y="4" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentAutoCastable" file="Interface\Buttons\UI-AutoCastableOverlay"
+					hidden="true">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="0" y="0" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+
+				<!-- Flyout arrow texture -->
+				<Texture name="$parentFlyoutArrow"
+					atlas="UI-HUD-ActionBar-Flyout"
+					rotation="-90">
+					<Size>
+						<AbsDimension x="12" y="12" />
+					</Size>
+					<Anchors>
+						<Anchor point="RIGHT" relativeTo="$parentBackground" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="-18" y="10" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Cooldown name="$parentCooldown" inherits="CooldownFrameTemplate" />
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				OldSpellButton_OnLoad(self);
+			</OnLoad>
+			<OnEvent>
+				OldSpellButton_OnEvent(self, event, ...);
+			</OnEvent>
+			<OnShow>
+				OldSpellButton_OnShow(self);
+			</OnShow>
+			<OnHide>
+				OldSpellButton_OnHide(self);
+			</OnHide>
+			<OnDragStart>
+				OldSpellButton_OnDrag(self, button);
+			</OnDragStart>
+			<OnReceiveDrag>
+				OldSpellButton_OnDrag(self);
+			</OnReceiveDrag>
+			<OnEnter>
+				OldSpellButton_OnEnter(self, motion);
+			</OnEnter>
+			<OnLeave>
+				GameTooltip:Hide();
+			</OnLeave>
+		</Scripts>
+		<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+			<Size>
+				<AbsDimension x="64" y="64" />
+			</Size>
+			<Anchors>
+				<Anchor point="CENTER">
+					<Offset>
+						<AbsDimension x="0" y="0" />
+					</Offset>
+				</Anchor>
+			</Anchors>
+		</NormalTexture>
+		<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
+		<HighlightTexture name="$parentHighlight" file="Interface\Buttons\ButtonHilight-Square"
+			alphaMode="ADD" />
+	</Button>
+	<Frame name="OldSpellBookFrame" toplevel="true" movable="true" enableMouse="true" hidden="true"
+		parent="UIParent">
+		<Size>
+			<AbsDimension x="384" y="512" />
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT">
+				<Offset>
+					<AbsDimension x="0" y="-104" />
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<HitRectInsets>
+			<AbsInset left="0" right="30" top="0" bottom="70" />
+		</HitRectInsets>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentIcon" file="Interface\Spellbook\Spellbook-Icon">
+					<Size>
+						<AbsDimension x="58" y="58" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset>
+								<AbsDimension x="10" y="-8" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+			<Layer level="ARTWORK">
+				<Texture name="$parentTopLeft" file="Interface\Spellbook\UI-SpellbookPanel-TopLeft">
+					<Size>
+						<AbsDimension x="256" y="256" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPLEFT" />
+					</Anchors>
+				</Texture>
+				<Texture name="$parentTopRight"
+					file="Interface\Spellbook\UI-SpellbookPanel-TopRight">
+					<Size>
+						<AbsDimension x="128" y="256" />
+					</Size>
+					<Anchors>
+						<Anchor point="TOPRIGHT" />
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBotLeft" file="Interface\Spellbook\UI-SpellbookPanel-BotLeft">
+					<Size>
+						<AbsDimension x="256" y="256" />
+					</Size>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" />
+					</Anchors>
+				</Texture>
+				<Texture name="$parentBotRight"
+					file="Interface\Spellbook\UI-SpellbookPanel-BotRight">
+					<Size>
+						<AbsDimension x="128" y="256" />
+					</Size>
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" />
+					</Anchors>
+				</Texture>
+				<FontString name="OldSpellBookTitleText" inherits="GameFontNormal" text="SPELLBOOK">
+					<Anchors>
+						<Anchor point="CENTER">
+							<Offset>
+								<AbsDimension x="6" y="230" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="OldSpellBookPageText" inherits="GameFontNormal">
+					<Size>
+						<AbsDimension x="102" y="0" />
+					</Size>
+					<Anchors>
+						<Anchor point="BOTTOM">
+							<Offset>
+								<AbsDimension x="-14" y="96" />
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button name="OldSpellBookFrameTabButton1" inherits="OldSpellBookFrameTabButtonTemplate">
+				<Anchors>
+					<Anchor point="CENTER" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="79" y="61" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<DisabledTexture file="Interface\SpellBook\UI-SpellBook-Tab1-Selected" />
+			</Button>
+			<Button name="OldSpellBookFrameTabButton2" inherits="OldSpellBookFrameTabButtonTemplate">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="OldSpellBookFrameTabButton1"
+						relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="-20" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<DisabledTexture file="Interface\SpellBook\UI-SpellBook-Tab1-Selected" />
+			</Button>
+			<Button name="OldSpellBookFrameTabButton3" inherits="OldSpellBookFrameTabButtonTemplate">
+				<Anchors>
+					<Anchor point="LEFT" relativeTo="OldSpellBookFrameTabButton2"
+						relativePoint="RIGHT">
+						<Offset>
+							<AbsDimension x="-20" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<DisabledTexture file="Interface\SpellBook\UI-SpellBook-Tab3-Selected" />
+			</Button>
+			<Button name="OldSpellBookPrevPageButton">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="OldSpellBookFrame" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="50" y="105" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString inherits="GameFontNormal" justifyH="LEFT" text="PREV">
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="OldSpellBookPrevPageButton"
+									relativePoint="RIGHT" />
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick function="OldSpellBookPrevPageButton_OnClick" />
+				</Scripts>
+				<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Up" />
+				<PushedTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Down" />
+				<DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-PrevPage-Disabled" />
+				<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />
+			</Button>
+			<Button name="OldSpellBookNextPageButton">
+				<Size>
+					<AbsDimension x="32" y="32" />
+				</Size>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="OldSpellBookFrame" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="314" y="105" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString inherits="GameFontNormal" justifyH="RIGHT" text="NEXT">
+							<Anchors>
+								<Anchor point="RIGHT" relativeTo="OldSpellBookNextPageButton"
+									relativePoint="LEFT" />
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick function="OldSpellBookNextPageButton_OnClick" />
+				</Scripts>
+				<NormalTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Up" />
+				<PushedTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Down" />
+				<DisabledTexture file="Interface\Buttons\UI-SpellbookIcon-NextPage-Disabled" />
+				<HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD" />
+			</Button>
+			<Button name="OldSpellBookCloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="OldSpellBookFrame" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-44" y="-25" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton1"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="1">
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset>
+							<AbsDimension x="34" y="-85" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton2"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="7">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton1">
+						<Offset>
+							<AbsDimension x="157" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton3"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="2">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton1" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-14" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton4"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="8">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton3">
+						<Offset>
+							<AbsDimension x="157" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton5"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="3">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton3" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-14" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton6"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="9">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton5">
+						<Offset>
+							<AbsDimension x="157" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton7"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="4">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton5" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-14" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton8"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="10">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton7">
+						<Offset>
+							<AbsDimension x="157" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton9"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="5">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton7" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-14" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton10"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="11">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton9">
+						<Offset>
+							<AbsDimension x="157" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton11"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="6">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton9" relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-14" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<Button name="OldSpellButton12"
+				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="12">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellButton11">
+						<Offset>
+							<AbsDimension x="157" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</Button>
+			<CheckButton name="OldSpellBookSkillLineTab1"
+				inherits="OldSpellBookSkillLineTabTemplate" id="1">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
+						<Offset>
+							<AbsDimension x="-32" y="-65" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab2"
+				inherits="OldSpellBookSkillLineTabTemplate" id="2">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab1"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab3"
+				inherits="OldSpellBookSkillLineTabTemplate" id="3">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab2"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab4"
+				inherits="OldSpellBookSkillLineTabTemplate" id="4">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab3"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab5"
+				inherits="OldSpellBookSkillLineTabTemplate" id="5">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab4"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab6"
+				inherits="OldSpellBookSkillLineTabTemplate" id="6">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab5"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab7"
+				inherits="OldSpellBookSkillLineTabTemplate" id="7">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab6"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<CheckButton name="OldSpellBookSkillLineTab8"
+				inherits="OldSpellBookSkillLineTabTemplate" id="8">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab7"
+						relativePoint="BOTTOMLEFT">
+						<Offset>
+							<AbsDimension x="0" y="-17" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+			</CheckButton>
+			<Frame name="OldSpellBookTabFlashFrame" hidden="true">
+				<Size>
+					<AbsDimension x="10" y="10" />
+				</Size>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="OldSpellBookSkillLineTab1">
+						<Offset>
+							<AbsDimension x="0" y="0" />
+						</Offset>
+					</Anchor>
+				</Anchors>
+				<Layers>
+					<Layer level="OVERLAY">
+						<Texture name="OldSpellBookSkillLineTab1Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab1" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab2Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab2" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab3Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab3" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab4Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab4" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab5Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab5" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab6Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab6" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab7Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab7" />
+							</Anchors>
+						</Texture>
+						<Texture name="OldSpellBookSkillLineTab8Flash"
+							file="Interface\Buttons\CheckButtonGlow" alphaMode="ADD" hidden="true">
+							<Size>
+								<AbsDimension x="64" y="64" />
+							</Size>
+							<Anchors>
+								<Anchor point="CENTER" relativeTo="OldSpellBookSkillLineTab8" />
+							</Anchors>
+						</Texture>
+					</Layer>
+				</Layers>
+			</Frame>
+		</Frames>
+		<Scripts>
+			<OnLoad function="OldSpellBookFrame_OnLoad" />
+			<OnEvent function="OldSpellBookFrame_OnEvent" />
+			<OnShow function="OldSpellBookFrame_OnShow" />
+			<OnHide function="OldSpellBookFrame_OnHide" />
+		</Scripts>
+	</Frame>
+</Ui>
