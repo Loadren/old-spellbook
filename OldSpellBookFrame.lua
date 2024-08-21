@@ -7,11 +7,16 @@ SPELLBOOK_PAGENUMBERS = {}
 -- This ensures the table is globally accessible
 _G[addonName] = OldSpellBook
 
+SpellBookUnitType = {
+    [0] = "Player",
+    [1] = "Pet",
+    Player = 0,
+    Pet = 1
+}
+
 -- Global declarations for keybinds
 BINDING_HEADER_OLD_SPELLBOOK = "Old Spellbook"
 BINDING_NAME_OLD_SPELLBOOK_SHOW_SPELLBOOK = "Show Spellbook"
-
-OldSpellBook.SpellTable = {}
 
 local ceil = math.ceil
 local strlen = string.len
@@ -31,9 +36,7 @@ f:RegisterEvent("ADDON_LOADED")
 -- OnEvent handler for spellbook updates and event handling
 f:SetScript("OnEvent", function(self, event, addOnName)
     -- Handle PopulatePlayerSpells with cooldown logic
-    if event == "ADDON_LOADED" and addOnName == addonName then
-
-    elseif event ~= "ADDON_LOADED" then
+    if event ~= "ADDON_LOADED" then
         HandlePopulatePlayerSpellsWithCooldown()
     end
 end)
@@ -41,7 +44,14 @@ end)
 -- Function to populate the player's spell table and sort spells by type and name
 function PopulatePlayerSpells()
     -- Clear the table before populating
-    table.wipe(OldSpellBook.SpellTable)
+    if OldSpellBook.SpellTable then
+        table.wipe(OldSpellBook.SpellTable)
+    end
+
+    OldSpellBook.SpellTable = {
+        Player = {},
+        Pet = {}
+    }
 
     -- Iterate through all skill lines
     for i = 1, C_SpellBook.GetNumSpellBookSkillLines() do
@@ -63,6 +73,7 @@ function PopulatePlayerSpells()
             -- Only store the spell if it has a valid action ID (i.e., it's not empty)
             if name and spellInfo and spellInfo.actionID then
                 local spellData = {
+                    newSpellBookIndex = j,
                     spellID = flyoutID or spellInfo.spellID or spellInfo.actionID, -- Because sometimes it's on actionID
                     name = name,
                     isPassive = spellInfo.isPassive,
@@ -85,13 +96,63 @@ function PopulatePlayerSpells()
         OldSpellBook.Utils.SortSpellsByName(passiveSpells)
 
         -- Merge activeSpells and passiveSpells back into a single table, active first
-        OldSpellBook.SpellTable[i] = {}
+        OldSpellBook.SpellTable["Player"][i] = {}
         for _, spell in ipairs(activeSpells) do
-            table.insert(OldSpellBook.SpellTable[i], spell)
+            table.insert(OldSpellBook.SpellTable["Player"][i], spell)
         end
         for _, spell in ipairs(passiveSpells) do
-            table.insert(OldSpellBook.SpellTable[i], spell)
+            table.insert(OldSpellBook.SpellTable["Player"][i], spell)
         end
+    end
+
+    -- Pet Spells
+    if (not C_SpellBook.HasPetSpells()) then
+        return
+    end
+
+    -- Separate tables for active and passive spells
+    local activeSpells = {}
+    local passiveSpells = {}
+
+    local numSpells, petToken = C_SpellBook.HasPetSpells() -- nil if pet does not have spellbook, 'petToken' will usually be "PET"
+    for i = 1, numSpells do
+        local petSpellName, petSubType = C_SpellBook.GetSpellBookItemName(i, Enum.SpellBookSpellBank.Pet)
+        local spellInfo = C_SpellBook.GetSpellBookItemInfo(i, Enum.SpellBookSpellBank.Pet)
+        local _, petSpellID = C_SpellBook.GetSpellBookItemType(i, Enum.SpellBookSpellBank.Pet)
+
+        -- Only store the spell if it has a valid action ID (i.e., it's not empty)
+        if petSpellName and spellInfo and spellInfo.actionID then
+            local spellData = {
+                newSpellBookIndex = i,
+                spellID = petSpellID or spellInfo.spellID or spellInfo.actionID, -- Because sometimes it's on actionID
+                name = petSpellName,
+                isPassive = spellInfo.isPassive,
+                isOffSpec = spellInfo.isOffSpec,
+                icon = spellInfo.iconID,
+                spellType = spellInfo.itemType
+            }
+
+            -- Add spells to either active or passive sections
+            if spellInfo.isPassive then
+                table.insert(passiveSpells, spellData)
+            else
+                table.insert(activeSpells, spellData)
+            end
+        end
+    end
+
+    -- Sort active and passive spells alphabetically by name
+    OldSpellBook.Utils.SortSpellsByName(activeSpells)
+    OldSpellBook.Utils.SortSpellsByName(passiveSpells)
+
+    -- Merge activeSpells and passiveSpells back into a single table, active first
+    OldSpellBook.SpellTable["Pet"] = {}
+    OldSpellBook.SpellTable["Pet"][1] = {}
+    for _, spell in ipairs(activeSpells) do
+        table.insert(OldSpellBook.SpellTable["Pet"][1], spell)
+    end
+    for _, spell in ipairs(passiveSpells) do
+        table.insert(OldSpellBook.SpellTable["Pet"][1], spell)
     end
 end
 
@@ -130,6 +191,7 @@ function OldSpellBook:ToggleOldSpellBook(bookType, forceOpen, forceClose)
     HideUIPanel(OldSpellBookFrame);
     if ((not isShown or (OldSpellBookFrame.bookType ~= bookType))) then
         OldSpellBookFrame.bookType = bookType;
+        OldSpellBookFrame.selectedSkillLine = 1;
         ShowUIPanel(OldSpellBookFrame);
     end
     OldSpellBookFrame_UpdatePages();
@@ -143,14 +205,13 @@ function OldSpellBookFrame_OnLoad(self)
 
     OldSpellBookFrame.bookType = Enum.SpellBookSpellBank.Player
 
-    -- Initialize page numbers for spellbook and pet
+    -- Initialize page numbers for spellbook
     for i = 1, MAX_SKILLLINE_TABS do
         SPELLBOOK_PAGENUMBERS[i] = 1
     end
 
-    if not Enum.SpellBookSpellBank.Pet then
-        Enum.SpellBookSpellBank.Pet = "pet"
-    end
+    -- Initialize page numbers for pet spellbook
+    SPELLBOOK_PAGENUMBERS[SpellBookUnitType[Enum.SpellBookSpellBank.Pet]] = 1
 
     -- Ensure Enum.SpellBookSpellBank.Pet is initialized as well
     if not SPELLBOOK_PAGENUMBERS[Enum.SpellBookSpellBank.Pet] then
@@ -209,6 +270,13 @@ function OldSpellBookFrame_Update(showing)
             end
             if skillLineInfo.iconID then
                 skillLineTab:SetNormalTexture(skillLineInfo.iconID)
+
+                -- if offspec, desaturate the icon and spellbook tab
+                if skillLineInfo.offSpecID then
+                    skillLineTab:GetNormalTexture():SetDesaturated(true)
+                else
+                    skillLineTab:GetNormalTexture():SetDesaturated(false)
+                end
             end
             skillLineTab.tooltip = skillLineInfo.name
             skillLineTab:Show()
@@ -220,6 +288,22 @@ function OldSpellBookFrame_Update(showing)
             end
         else
             skillLineTab:Hide()
+        end
+    end
+
+    -- Setup tabs
+    local hasPetSpells, petToken = C_SpellBook.HasPetSpells();
+    OldSpellBookFrame.petTitle = nil;
+    if (hasPetSpells) then
+        OldSpellBookFrame_SetTabType(OldSpellBookFrameTabButton1, Enum.SpellBookSpellBank.Player);
+        OldSpellBookFrame_SetTabType(OldSpellBookFrameTabButton2, Enum.SpellBookSpellBank.Pet, petToken);
+    else
+        OldSpellBookFrame_SetTabType(OldSpellBookFrameTabButton1, Enum.SpellBookSpellBank.Player);
+
+        if (OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet) then
+            -- if has no pet spells but trying to show the pet spellbook close the window;
+            HideUIPanel(OldSpellBookFrame);
+            OldSpellBookFrame.bookType = Enum.SpellBookSpellBank.Player;
         end
     end
 
@@ -287,7 +371,13 @@ function OldSpellBookFrame_UpdatePages()
 
     -- Update the page number display
     OldSpellBookPageText:SetFormattedText(PAGE_NUMBER, currentPage)
-    -- OldSpellBook_UpdateSpellPage()
+end
+
+function OldSpellBookFrameTabButton_OnClick(self)
+    -- suppress the hiding sound so we don't play a hide and show sound simultaneously
+    OldSpellBookFrame.suppressCloseSound = true;
+    OldSpellBook:ToggleOldSpellBook(self.bookType, true);
+    OldSpellBookFrame.suppressCloseSound = false;
 end
 
 function OldSpellBookFrame_SetTabType(tabButton, bookType, token)
@@ -386,11 +476,21 @@ function OldSpellButton_OnHide(self)
 end
 
 function OldSpellButton_OnEnter(self)
-    local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
-    local currentPage = SPELLBOOK_PAGENUMBERS[selectedSkillLine] or 1
+        local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
+
+    -- Getting Pet Page Number if we're on booktype Pet
+    local truePageIndex = 1
+    if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet then
+        truePageIndex = "Pet"
+    else
+        truePageIndex = selectedSkillLine
+    end
+
+    local currentPage = SPELLBOOK_PAGENUMBERS[truePageIndex] or 1
     local spellIndex = (currentPage - 1) * SPELLS_PER_PAGE + self:GetID()
 
-    local spellTableForCategory = OldSpellBook.SpellTable[selectedSkillLine]
+    local spellTableForCategory =
+        OldSpellBook.SpellTable[SpellBookUnitType[OldSpellBookFrame.bookType]][selectedSkillLine]
     if not spellTableForCategory or not spellTableForCategory[spellIndex] then
         return
     end
@@ -409,17 +509,33 @@ function OldSpellButton_OnEnter(self)
 end
 
 function OldSpellButton_OnDrag(self)
-    local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
-    local currentPage = SPELLBOOK_PAGENUMBERS[selectedSkillLine] or 1
+        local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
+
+    -- Getting Pet Page Number if we're on booktype Pet
+    local truePageIndex = 1
+    if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet then
+        truePageIndex = "Pet"
+    else
+        truePageIndex = selectedSkillLine
+    end
+
+    local currentPage = SPELLBOOK_PAGENUMBERS[truePageIndex] or 1
     local spellIndex = (currentPage - 1) * SPELLS_PER_PAGE + self:GetID()
 
-    local spellTableForCategory = OldSpellBook.SpellTable[selectedSkillLine]
+    -- spellIndex in this case is the index of the spell in TWW spellbook
+    local trueSpellIndex = 0
+    for i = 1, selectedSkillLine - 1 do
+        trueSpellIndex = trueSpellIndex + #OldSpellBook.SpellTable[SpellBookUnitType[OldSpellBookFrame.bookType]][i]
+    end
+    trueSpellIndex = trueSpellIndex + spellIndex
+
+    local spellTableForCategory =
+        OldSpellBook.SpellTable[SpellBookUnitType[OldSpellBookFrame.bookType]][selectedSkillLine]
     if not spellTableForCategory or not spellTableForCategory[spellIndex] then
         return
     end
 
     local spellData = spellTableForCategory[spellIndex]
-    local spellID = spellData.spellID
 
     -- Ensure the icon texture is valid and visible before allowing the drag
     local iconTexture = _G[self:GetName() .. "IconTexture"]
@@ -428,15 +544,25 @@ function OldSpellButton_OnDrag(self)
     end
 
     -- Uncheck the button and initiate the drag for the spell
-    C_SpellBook.PickupSpellBookItem(spellIndex, OldSpellBookFrame.bookType)
+    C_SpellBook.PickupSpellBookItem(spellData.newSpellBookIndex, OldSpellBookFrame.bookType)
 end
 
 function OldSpellButton_UpdateSelection(self)
     local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
-    local currentPage = SPELLBOOK_PAGENUMBERS[selectedSkillLine] or 1
+
+    -- Getting Pet Page Number if we're on booktype Pet
+    local truePageIndex = 1
+    if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet then
+        truePageIndex = "Pet"
+    else
+        truePageIndex = selectedSkillLine
+    end
+
+    local currentPage = SPELLBOOK_PAGENUMBERS[truePageIndex] or 1
     local spellIndex = (currentPage - 1) * SPELLS_PER_PAGE + self:GetID()
 
-    local spellTableForCategory = OldSpellBook.SpellTable[selectedSkillLine]
+    local spellTableForCategory =
+        OldSpellBook.SpellTable[SpellBookUnitType[OldSpellBookFrame.bookType]][selectedSkillLine]
     if not spellTableForCategory or not spellTableForCategory[spellIndex] then
         self:SetChecked(false)
         return
@@ -444,11 +570,21 @@ function OldSpellButton_UpdateSelection(self)
 end
 
 function OldSpellButton_UpdateButton(self)
-    local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
-    local currentPage = SPELLBOOK_PAGENUMBERS[selectedSkillLine] or 1
+        local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
+
+    -- Getting Pet Page Number if we're on booktype Pet
+    local truePageIndex = 1
+    if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet then
+        truePageIndex = "Pet"
+    else
+        truePageIndex = selectedSkillLine
+    end
+
+    local currentPage = SPELLBOOK_PAGENUMBERS[truePageIndex] or 1
     local spellIndex = (currentPage - 1) * SPELLS_PER_PAGE + self:GetID()
 
-    local spellTableForCategory = OldSpellBook.SpellTable[selectedSkillLine]
+    local spellTableForCategory =
+        OldSpellBook.SpellTable[SpellBookUnitType[OldSpellBookFrame.bookType]][selectedSkillLine]
     if not spellTableForCategory or not spellTableForCategory[spellIndex] then
         self:Hide()
         return
@@ -526,32 +662,8 @@ function OldSpellButton_UpdateButton(self)
     self:Show()
 end
 
-
-function OldSpellBook_GetCurrentPage()
-    local currentPage, maxPages
-    local numPetSpells = C_SpellBook.HasPetSpells()
-
-    if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet then
-        -- Handle the pet spellbook page number and total pages
-        currentPage = SPELLBOOK_PAGENUMBERS[Enum.SpellBookSpellBank.Pet] or 1
-        maxPages = ceil(numPetSpells / SPELLS_PER_PAGE)
-    else
-        -- Handle the regular spellbook's skill line page number and total pages
-        currentPage = SPELLBOOK_PAGENUMBERS[OldSpellBookFrame.selectedSkillLine] or 1
-        local spellTableForCategory = OldSpellBook.SpellTable[OldSpellBookFrame.selectedSkillLine]
-
-        if spellTableForCategory then
-            local totalSpells = #spellTableForCategory
-            maxPages = ceil(totalSpells / SPELLS_PER_PAGE)
-        else
-            maxPages = 1 -- Fallback in case the spell table for the skill line is missing
-        end
-    end
-
-    return currentPage, maxPages
-end
-
 function OldSpellBookPrevPageButton_OnClick()
+
     local pageNum = OldSpellBook_GetCurrentPage() - 1;
     if (OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Player) then
         PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
@@ -559,7 +671,7 @@ function OldSpellBookPrevPageButton_OnClick()
     else
         OldSpellBookTitleText:SetText(OldSpellBookFrame.petTitle);
         PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
-        SPELLBOOK_PAGENUMBERS[Enum.SpellBookSpellBank.Pet] = pageNum;
+        SPELLBOOK_PAGENUMBERS[SpellBookUnitType[Enum.SpellBookSpellBank.Pet]] = pageNum;
     end
     OldSpellBook_UpdatePageArrows();
     OldSpellBookPageText:SetFormattedText(PAGE_NUMBER, pageNum);
@@ -569,6 +681,7 @@ function OldSpellBookPrevPageButton_OnClick()
 end
 
 function OldSpellBookNextPageButton_OnClick()
+
     local pageNum = OldSpellBook_GetCurrentPage() + 1;
     if (OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Player) then
         PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
@@ -576,7 +689,7 @@ function OldSpellBookNextPageButton_OnClick()
     else
         OldSpellBookTitleText:SetText(OldSpellBookFrame.petTitle);
         PlaySound(SOUNDKIT.IG_ABILITY_PAGE_TURN);
-        SPELLBOOK_PAGENUMBERS[Enum.SpellBookSpellBank.Pet] = pageNum;
+        SPELLBOOK_PAGENUMBERS[SpellBookUnitType[Enum.SpellBookSpellBank.Pet]] = pageNum;
     end
     OldSpellBook_UpdatePageArrows();
     OldSpellBookPageText:SetFormattedText(PAGE_NUMBER, pageNum);
@@ -610,6 +723,17 @@ function OldSpellBookSkillLineTab_OnClick(self, id)
     OldSpellBookFrame_Update()
     OldSpellBookPageText:SetFormattedText(PAGE_NUMBER, OldSpellBook_GetCurrentPage())
 
+    if (skillLineInfo.offSpecID) then
+        _G["OldSpellBookFrameTopLeft"]:SetDesaturated(true)
+        _G["OldSpellBookFrameTopRight"]:SetDesaturated(true)
+        _G["OldSpellBookFrameBotLeft"]:SetDesaturated(true)
+        _G["OldSpellBookFrameBotRight"]:SetDesaturated(true)
+    else
+        _G["OldSpellBookFrameTopLeft"]:SetDesaturated(false)
+        _G["OldSpellBookFrameTopRight"]:SetDesaturated(false)
+        _G["OldSpellBookFrameBotLeft"]:SetDesaturated(false)
+        _G["OldSpellBookFrameBotRight"]:SetDesaturated(false)
+    end
     if self then
         local tabFlash = _G[self:GetName() .. "Flash"]
         if tabFlash then
@@ -620,6 +744,7 @@ end
 
 function OldSpellBook_UpdatePageArrows()
     local currentPage, maxPages = OldSpellBook_GetCurrentPage();
+
     if (currentPage == 1) then
         OldSpellBookPrevPageButton:Disable();
     else
@@ -638,7 +763,7 @@ function OldSpellBook_GetCurrentPage()
 
     if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet then
         -- Handle the pet spellbook page number and total pages
-        currentPage = PET_PAGENUMBER or 1
+        currentPage = SPELLBOOK_PAGENUMBERS[SpellBookUnitType[Enum.SpellBookSpellBank.Pet]] or 1
         maxPages = ceil(numPetSpells / SPELLS_PER_PAGE)
     else
         -- Handle the regular spellbook's skill line page number and total pages
