@@ -393,7 +393,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton1"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="1">
+				inherits="OldSpellButtonTemplate" id="1">
 				<Anchors>
 					<Anchor point="TOPLEFT">
 						<Offset>
@@ -403,7 +403,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton2"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="7">
+				inherits="OldSpellButtonTemplate" id="7">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton1">
 						<Offset>
@@ -413,7 +413,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton3"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="2">
+				inherits="OldSpellButtonTemplate" id="2">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton1" relativePoint="BOTTOMLEFT">
 						<Offset>
@@ -423,7 +423,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton4"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="8">
+				inherits="OldSpellButtonTemplate" id="8">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton3">
 						<Offset>
@@ -433,7 +433,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton5"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="3">
+				inherits="OldSpellButtonTemplate" id="3">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton3" relativePoint="BOTTOMLEFT">
 						<Offset>
@@ -443,7 +443,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton6"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="9">
+				inherits="OldSpellButtonTemplate" id="9">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton5">
 						<Offset>
@@ -453,7 +453,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton7"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="4">
+				inherits="OldSpellButtonTemplate" id="4">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton5" relativePoint="BOTTOMLEFT">
 						<Offset>
@@ -463,7 +463,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton8"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="10">
+				inherits="OldSpellButtonTemplate" id="10">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton7">
 						<Offset>
@@ -473,7 +473,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton9"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="5">
+				inherits="OldSpellButtonTemplate" id="5">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton7" relativePoint="BOTTOMLEFT">
 						<Offset>
@@ -483,7 +483,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton10"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="11">
+				inherits="OldSpellButtonTemplate" id="11">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton9">
 						<Offset>
@@ -493,7 +493,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton11"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="6">
+				inherits="OldSpellButtonTemplate" id="6">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton9" relativePoint="BOTTOMLEFT">
 						<Offset>
@@ -503,7 +503,7 @@
 				</Anchors>
 			</Button>
 			<Button name="OldSpellButton12"
-				inherits="OldSpellButtonTemplate, SecureActionButtonTemplate" id="12">
+				inherits="OldSpellButtonTemplate" id="12">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="OldSpellButton11">
 						<Offset>
