@@ -1,4 +1,4 @@
-## Interface: 100002
+## Interface: 110002
 ## Title: Old SpellBook
 ## Notes: Reverts the SpellBook UI to its old version.
 ## Author: Loadren
