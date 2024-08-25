@@ -142,6 +142,7 @@
 					</Anchors>
 				</Texture>
 
+
 				<!-- Flyout arrow texture -->
 				<Texture name="$parentFlyoutArrow"
 					atlas="UI-HUD-ActionBar-Flyout"
@@ -155,6 +156,16 @@
 								<AbsDimension x="-18" y="10" />
 							</Offset>
 						</Anchor>
+					</Anchors>
+				</Texture>
+
+				<!-- Custom shine effect using a simple rotating texture -->
+				<Texture name="$parentCustomShine" file="Interface\\Cooldown\\star4" hidden="true">
+					<Size>
+						<AbsDimension x="60" y="60" />
+					</Size>
+					<Anchors>
+						<Anchor point="CENTER" />
 					</Anchors>
 				</Texture>
 			</Layer>
@@ -203,6 +214,7 @@
 		<PushedTexture file="Interface\Buttons\UI-Quickslot-Depress" />
 		<HighlightTexture name="$parentHighlight" file="Interface\Buttons\ButtonHilight-Square"
 			alphaMode="ADD" />
+
 	</Button>
 	<Frame name="OldSpellBookFrame" toplevel="true" movable="true" enableMouse="true" hidden="true"
 		parent="UIParent">

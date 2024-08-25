@@ -47,9 +47,26 @@ OldSpellBook.Utils.NormalizeForComparison = function(str)
     return OldSpellBook.Utils.NormalizeString(str):lower()
 end
 
--- Example usage in sorting
+-- Sorting by name, ignoring case and accents.
 OldSpellBook.Utils.SortSpellsByName = function(spells)
     table.sort(spells, function(a, b)
+        return OldSpellBook.Utils.NormalizeForComparison(a.name) < OldSpellBook.Utils.NormalizeForComparison(b.name)
+    end)
+end
+
+OldSpellBook.Utils.SortSpellsByKnownActivePassiveAndName = function(spells)
+    table.sort(spells, function(a, b)
+        -- First, sort by known status (true known spells first)
+        if a.isKnown ~= b.isKnown then
+            return a.isKnown
+        end
+
+        -- Then, sort by active/passive status (active spells before passive)
+        if a.isPassive ~= b.isPassive then
+            return not a.isPassive  -- Passive should be false for active spells to come first
+        end
+
+        -- Finally, sort alphabetically by name, ignoring case and accents
         return OldSpellBook.Utils.NormalizeForComparison(a.name) < OldSpellBook.Utils.NormalizeForComparison(b.name)
     end)
 end

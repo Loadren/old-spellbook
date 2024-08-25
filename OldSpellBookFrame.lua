@@ -57,9 +57,8 @@ function PopulatePlayerSpells()
     for i = 1, C_SpellBook.GetNumSpellBookSkillLines() do
         local skillLineInfo = C_SpellBook.GetSpellBookSkillLineInfo(i)
 
-        -- Separate tables for active and passive spells
-        local activeSpells = {}
-        local passiveSpells = {}
+        -- Combined table for both active and passive spells
+        local combinedSpells = {}
 
         local offset, numSlots = skillLineInfo.itemIndexOffset, skillLineInfo.numSpellBookItems
 
@@ -69,40 +68,39 @@ function PopulatePlayerSpells()
             local name = C_SpellBook.GetSpellBookItemName(j, Enum.SpellBookSpellBank.Player)
             local spellInfo = C_SpellBook.GetSpellBookItemInfo(j, Enum.SpellBookSpellBank.Player)
             local _, flyoutID = C_SpellBook.GetSpellBookItemType(j, Enum.SpellBookSpellBank.Player)
+            local flyoutInfo = {};
+            if spellInfo.itemType == Enum.SpellBookItemType.Flyout then
+                flyoutInfo.name, flyoutInfo.description, flyoutInfo.numSlots, flyoutInfo.isKnown = GetFlyoutInfo(
+                    flyoutID)
+            end
 
             -- Only store the spell if it has a valid action ID (i.e., it's not empty)
             if name and spellInfo and spellInfo.actionID then
+                local spellID = flyoutID or spellInfo.spellID or spellInfo.actionID -- Because sometimes it's on actionID
+
+                local isKnown = IsSpellKnownOrOverridesKnown(spellID, false) or flyoutInfo.isKnown
+
                 local spellData = {
                     newSpellBookIndex = j,
-                    spellID = flyoutID or spellInfo.spellID or spellInfo.actionID, -- Because sometimes it's on actionID
+                    spellID = spellID,
                     name = name,
                     isPassive = spellInfo.isPassive,
+                    isKnown = (not spellInfo.isOffSpec) and isKnown,
                     isOffSpec = spellInfo.isOffSpec,
                     icon = spellInfo.iconID,
                     spellType = spellInfo.itemType
                 }
 
-                -- Add spells to either active or passive sections
-                if spellInfo.isPassive then
-                    table.insert(passiveSpells, spellData)
-                else
-                    table.insert(activeSpells, spellData)
-                end
+                -- Add to the combined spell table (both active and passive)
+                table.insert(combinedSpells, spellData)
             end
         end
 
-        -- Sort active and passive spells alphabetically by name
-        OldSpellBook.Utils.SortSpellsByName(activeSpells)
-        OldSpellBook.Utils.SortSpellsByName(passiveSpells)
+        -- Sort the combined spells by known status, active/passive status, and name
+        OldSpellBook.Utils.SortSpellsByKnownActivePassiveAndName(combinedSpells)
 
-        -- Merge activeSpells and passiveSpells back into a single table, active first
-        OldSpellBook.SpellTable["Player"][i] = {}
-        for _, spell in ipairs(activeSpells) do
-            table.insert(OldSpellBook.SpellTable["Player"][i], spell)
-        end
-        for _, spell in ipairs(passiveSpells) do
-            table.insert(OldSpellBook.SpellTable["Player"][i], spell)
-        end
+        -- Store the sorted spells in the Player's spell table
+        OldSpellBook.SpellTable["Player"][i] = combinedSpells
     end
 
     -- Pet Spells
@@ -110,50 +108,47 @@ function PopulatePlayerSpells()
         return
     end
 
-    -- Separate tables for active and passive spells
-    local activeSpells = {}
-    local passiveSpells = {}
+    -- Combined table for both active and passive pet spells
+    local combinedSpells = {}
 
     local numSpells, petToken = C_SpellBook.HasPetSpells() -- nil if pet does not have spellbook, 'petToken' will usually be "PET"
     for i = 1, numSpells do
         local petSpellName, petSubType = C_SpellBook.GetSpellBookItemName(i, Enum.SpellBookSpellBank.Pet)
         local spellInfo = C_SpellBook.GetSpellBookItemInfo(i, Enum.SpellBookSpellBank.Pet)
-        local _, petSpellID = C_SpellBook.GetSpellBookItemType(i, Enum.SpellBookSpellBank.Pet)
+        local _, petActionID = C_SpellBook.GetSpellBookItemType(i, Enum.SpellBookSpellBank.Pet)
+
+        -- Get Autocast State  for Pet Spells with Bit 1073741824
+        local autoCastState = bit.band(petActionID, 1073741824) == 1073741824
 
         -- Only store the spell if it has a valid action ID (i.e., it's not empty)
         if petSpellName and spellInfo and spellInfo.actionID then
+            local spellID = petActionID or spellInfo.spellID or spellInfo.actionID -- Because sometimes it's on actionID
+
+            -- Perform a bitwise AND operation with the mask 0xFFFFFF (16,777,215 in decimal) if spell is known
+            spellID = bit.band(spellID, 0xFFFFFF)
+
             local spellData = {
                 newSpellBookIndex = i,
-                spellID = petSpellID or spellInfo.spellID or spellInfo.actionID, -- Because sometimes it's on actionID
+                spellID = spellID,
                 name = petSpellName,
                 isPassive = spellInfo.isPassive,
+                isKnown = true,
                 isOffSpec = spellInfo.isOffSpec,
                 icon = spellInfo.iconID,
-                spellType = spellInfo.itemType
+                spellType = spellInfo.itemType,
+                autoCastState = autoCastState
             }
 
-            -- Add spells to either active or passive sections
-            if spellInfo.isPassive then
-                table.insert(passiveSpells, spellData)
-            else
-                table.insert(activeSpells, spellData)
-            end
+            -- Add to the combined spell table (both active and passive)
+            table.insert(combinedSpells, spellData)
         end
     end
 
-    -- Sort active and passive spells alphabetically by name
-    OldSpellBook.Utils.SortSpellsByName(activeSpells)
-    OldSpellBook.Utils.SortSpellsByName(passiveSpells)
+    -- Sort the combined pet spells by known status, active/passive status, and name
+    OldSpellBook.Utils.SortSpellsByKnownActivePassiveAndName(combinedSpells)
 
-    -- Merge activeSpells and passiveSpells back into a single table, active first
-    OldSpellBook.SpellTable["Pet"] = {}
-    OldSpellBook.SpellTable["Pet"][1] = {}
-    for _, spell in ipairs(activeSpells) do
-        table.insert(OldSpellBook.SpellTable["Pet"][1], spell)
-    end
-    for _, spell in ipairs(passiveSpells) do
-        table.insert(OldSpellBook.SpellTable["Pet"][1], spell)
-    end
+    -- Store the sorted pet spells in the Pet's spell table
+    OldSpellBook.SpellTable["Pet"][1] = combinedSpells
 end
 
 -- Helper function to handle PopulatePlayerSpells with cooldown
@@ -476,7 +471,7 @@ function OldSpellButton_OnHide(self)
 end
 
 function OldSpellButton_OnEnter(self)
-        local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
+    local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
 
     -- Getting Pet Page Number if we're on booktype Pet
     local truePageIndex = 1
@@ -509,7 +504,7 @@ function OldSpellButton_OnEnter(self)
 end
 
 function OldSpellButton_OnDrag(self)
-        local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
+    local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
 
     -- Getting Pet Page Number if we're on booktype Pet
     local truePageIndex = 1
@@ -570,7 +565,7 @@ function OldSpellButton_UpdateSelection(self)
 end
 
 function OldSpellButton_UpdateButton(self)
-        local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
+    local selectedSkillLine = OldSpellBookFrame.selectedSkillLine
 
     -- Getting Pet Page Number if we're on booktype Pet
     local truePageIndex = 1
@@ -603,7 +598,6 @@ function OldSpellButton_UpdateButton(self)
 
     -- Set the spell icon texture
     iconTexture:SetTexture(spellData.icon)
-    iconTexture:SetDesaturated(false)
     iconTexture:Show()
 
     -- Set the spell name
@@ -632,10 +626,11 @@ function OldSpellButton_UpdateButton(self)
         self:SetAttribute("flyout", spellID)
         self:SetAttribute("spell", spellID)
         self:SetAttribute("flyoutDirection", "RIGHT") -- You can change the direction as needed
+        self.isActionBar = false
 
     else
         -- Regular spell handling
-        self:SetAttribute("type", "spell")
+        self:SetAttribute("type1", "spell")
         self:SetAttribute("spell", spellID)
 
         -- Hide the flyout arrow if it exists
@@ -647,12 +642,39 @@ function OldSpellButton_UpdateButton(self)
         subSpellString:SetText(spellData.isPassive and "Passive" or "")
         subSpellString:Show()
 
-        -- Set desaturation for unlearned or off-spec spells
-        if spellData.isOffSpec or spellData.spellType == Enum.SpellBookItemType.FutureSpell then
-            iconTexture:SetDesaturated(true)
+    end
+
+    -- Set desaturation for unlearned or off-spec spells
+    if spellData.isOffSpec or spellData.spellType == Enum.SpellBookItemType.FutureSpell or not spellData.isKnown then
+        iconTexture:SetDesaturated(true)
+        spellString:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
+        subSpellString:SetTextColor(VERY_DARK_GRAY_COLOR.r, VERY_DARK_GRAY_COLOR.g, VERY_DARK_GRAY_COLOR.b)
+    else
+        iconTexture:SetDesaturated(false)
+        spellString:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+        subSpellString:SetTextColor(PARCHMENT_MATERIAL_TEXT_COLOR.r, PARCHMENT_MATERIAL_TEXT_COLOR.g,
+            PARCHMENT_MATERIAL_TEXT_COLOR.b)
+    end
+
+    -- Handle autocast for pet spells
+    if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet and spellData.isKnown then
+        local autocastEnabled = spellData.autoCastState or false
+        print(spellData.autoCastState)
+
+        if autocastEnabled then
+            local shine = _G[self:GetName() .. "CustomShine"]
+            shine:Show()
+            print(shine)
+            -- Optional: Add animation or rotation if needed, you can use UIObject:SetRotation()
+            shine:SetRotation(GetTime() * 2) -- For example, rotate it slowly over time
         else
-            iconTexture:SetDesaturated(false)
+            local shine = _G[self:GetName() .. "CustomShine"]
+            shine:Hide()
         end
+    else
+        -- Hide autocast textures if not a pet spell or if it's unknown
+        local shine = _G[self:GetName() .. "CustomShine"]
+        shine:Hide()
     end
 
     -- Ensure the selection state is updated
