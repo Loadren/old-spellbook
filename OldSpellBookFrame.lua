@@ -659,12 +659,10 @@ function OldSpellButton_UpdateButton(self)
     -- Handle autocast for pet spells
     if OldSpellBookFrame.bookType == Enum.SpellBookSpellBank.Pet and spellData.isKnown then
         local autocastEnabled = spellData.autoCastState or false
-        print(spellData.autoCastState)
 
         if autocastEnabled then
             local shine = _G[self:GetName() .. "CustomShine"]
             shine:Show()
-            print(shine)
             -- Optional: Add animation or rotation if needed, you can use UIObject:SetRotation()
             shine:SetRotation(GetTime() * 2) -- For example, rotate it slowly over time
         else
