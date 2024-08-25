@@ -35,7 +35,6 @@ f:RegisterEvent("ADDON_LOADED")
 
 -- OnEvent handler for spellbook updates and event handling
 f:SetScript("OnEvent", function(self, event, addOnName)
-    -- Handle PopulatePlayerSpells with cooldown logic
     if event ~= "ADDON_LOADED" then
         HandlePopulatePlayerSpellsWithCooldown()
     end
@@ -197,6 +196,12 @@ end
 function OldSpellBookFrame_OnLoad(self)
     self:RegisterEvent("SPELLS_CHANGED")
     self:RegisterEvent("LEARNED_SPELL_IN_TAB")
+
+    UIPanelWindows["OldSpellBookFrame"] = {
+        area = "left",
+        pushable = 1,
+        whileDead = 1
+    }
 
     OldSpellBookFrame.bookType = Enum.SpellBookSpellBank.Player
 
